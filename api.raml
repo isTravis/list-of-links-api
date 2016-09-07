@@ -1,0 +1,123 @@
+#%RAML 0.8
+title: List of Links
+documentation:
+  - title: Introduction
+    content: |
+      This API provides full access to the List of Links database.
+      All requests and responses are in the form of application/json.
+
+version: v1
+protocols: [ HTTPS ]
+baseUri: https://api.listoflinks.co
+mediaType: application/json
+/user:
+  description: |
+    Routes to access data about ListOfLinks Users
+  displayName: User
+  post:
+    description: |
+      Create a new User
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          username:
+            description: username of the new User to be created
+            required: true
+          name:
+            description: name of the new User to be created
+            required: true
+          image:
+            description: image for the new User to be created
+            required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                id: "2",
+                username: "janedoe",
+                name: "Jane Doe",
+                image: "https://assets.pubpub.org/picture.jpg",
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "User not found"
+              }
+  /{username}:
+    get:
+      description: |
+        Get user data by username.
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  id: "2",
+                  username: "janedoe",
+                  name: "Jane Doe",
+                  image: "https://assets.pubpub.org/picture.jpg",
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  error : "User not found"
+                }
+  /{id}:
+    get:
+      description: |
+        Get user data by id.
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  id: "2",
+                  username: "janedoe",
+                  name: "Jane Doe",
+                  image: "https://assets.pubpub.org/picture.jpg",
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  error : "User not found"
+                }
+    put:
+      description: |
+        Update the user with the given id
+      body:
+        application/x-www-form-urlencoded:
+          formParameters:
+            username:
+              description: new username to update
+            name:
+              description: new name to update
+            image:
+              description: new image to update
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  id: "2",
+                  username: "janedoe",
+                  name: "Jane Doe",
+                  image: "https://assets.pubpub.org/picture.jpg",
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  error : "User not found"
+                }
