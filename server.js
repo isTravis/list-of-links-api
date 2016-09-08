@@ -41,9 +41,20 @@ osprey.loadFile(path).then(function (middleware) {
 		res.end();
 	});
 
+	/* ------------------- */
+	/* ------------------- */
+	/* Begin API Endpoints */
+	/* ------------------- */
+	/* ------------------- */
+
 	/* POST a new user */
 	app.post('/user', function(req, res, next) {
-		User.create(req.body)
+		User.create({
+			username: req.body.username,
+			name: req.body.name,
+			image: req.body.image,
+			email: req.body.email,
+		})
 		.then(function() {
 			res.status(201).json({'success': true});
 		})
@@ -56,7 +67,7 @@ osprey.loadFile(path).then(function (middleware) {
 	app.get('/user/:id', function(req, res, next) {
 		User.findOne({
 			where: {$or: [{username: req.params.id}, {id: req.params.id}] },
-			include: [ Link ]
+			include: [ {model: Link} {model: User, through: {where: {inactive: null}}, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'followees', foreignKey: 'followee'} ]
 		})
 		.then(function(user) {
 			res.status(201).json(user);
@@ -69,6 +80,99 @@ osprey.loadFile(path).then(function (middleware) {
 	/* PUT an update to one user */
 	app.put('/user/:id', function(req, res, next) {
 		User.update(req.body, {
+			where: {id: req.params.id}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* Delete a user */
+	app.del('/user/:id', function(req, res, next) {
+		User.destroy({
+			where: {id: req.params.id}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* POST a new Link */
+	app.post('/link', function(req, res, next) {
+		Link.create({
+			title: req.body.title,
+			url: req.body.url,
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* PUT an update to one link */
+	app.put('/link/:id', function(req, res, next) {
+		Link.update(req.body, {
+			where: {id: req.params.id}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* Delete a Link */
+	app.del('/link/:id', function(req, res, next) {
+		Link.destroy({
+			where: {id: req.params.id}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* POST a new Follow */
+	app.post('/follow', function(req, res, next) {
+		Follow.create({
+			follower: req.body.follower,
+			followee: req.body.followee,
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* PUT an update to one Follow */
+	app.put('/follow/:id', function(req, res, next) {
+		Follow.update(req.body, {
+			where: {id: req.params.id}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			res.status(500).json(err);
+		});
+	});
+
+	/* Delete a Follow */
+	app.del('/follow/:id', function(req, res, next) {
+		Follow.destroy({
 			where: {id: req.params.id}
 		})
 		.then(function() {

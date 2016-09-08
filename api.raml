@@ -29,16 +29,16 @@ mediaType: application/json
           image:
             description: image for the new User to be created
             required: true
+          email:
+            description: email for the new User to be created
+            required: true
     responses:
       200:
         body:
           application/json:
             example: |
               {
-                id: "2",
-                username: "janedoe",
-                name: "Jane Doe",
-                image: "https://assets.pubpub.org/picture.jpg",
+                success: true
               }
       404:
         body:
@@ -47,32 +47,10 @@ mediaType: application/json
               {
                 error : "User not found"
               }
-  /{username}:
-    get:
-      description: |
-        Get user data by username.
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  id: "2",
-                  username: "janedoe",
-                  name: "Jane Doe",
-                  image: "https://assets.pubpub.org/picture.jpg",
-                }
-        404:
-          body:
-            application/json:
-              example: |
-                {
-                  error : "User not found"
-                }
   /{id}:
     get:
       description: |
-        Get user data by id.
+        Get user data by id. Passing the username in as the id is also accepted.
       responses:
         200:
           body:
@@ -83,6 +61,46 @@ mediaType: application/json
                   username: "janedoe",
                   name: "Jane Doe",
                   image: "https://assets.pubpub.org/picture.jpg",
+                  links: [
+                    {
+                      title: "My new link",
+                      url: "http://www.link.com"
+                    },
+                    {
+                      title: "Another link",
+                      url: "http://www.link2.com"
+                    }
+                  ],
+                  following: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 1,
+                        followee: 2
+                      }
+                    }
+                  ],
+                  followers: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 2,
+                        followee: 1
+                      }
+                    }
+                  ]
                 }
         404:
           body:
@@ -121,3 +139,172 @@ mediaType: application/json
                 {
                   error : "User not found"
                 }
+    delete:
+      description: |
+        Delete the user with the given id
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  success: true
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  error : "User not found"
+                }
+/link:
+  description: |
+    Routes to access data about ListOfLinks Link
+  displayName: Link
+  post:
+    description: |
+      Create a new Link
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          title:
+            description: title of the Link to be created
+            required: true
+          url:
+            description: url of the new Link to be created
+            required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                success: true
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                success: false
+              }
+  /{id}:
+    put:
+      description: |
+        Edit a link
+      body:
+        application/x-www-form-urlencoded:
+          formParameters:
+            title:
+              description: updatedtitle of Link to be updated
+            url:
+              description: updatedurl of the Link to be updated
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  success: true
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  success: false
+                }
+    delete:
+      description: |
+        Delete a Link
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  success: true
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  success: false
+                }
+/follow:
+  description: |
+    Routes to access data about ListOfLinks Follow
+  displayName: Follow
+  post:
+    description: |
+      Create a new Follow
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          follower:
+            description: id of the User who is following
+            required: true
+          followee:
+            description: id of the User who is being followed
+            required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                success: true
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                success: false
+              }
+  /{id}:
+    put:
+      description: |
+        Update the lastRead value of a Follow
+      body:
+        application/x-www-form-urlencoded:
+          formParameters:
+            lastRead:
+              description: date the follower last viewed the profile of the followee
+              type: date
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  success: true
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  success: false
+                }
+    delete:
+      description: |
+        Delete a Follow
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  success: true
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  success: false
+                }
+
+  
