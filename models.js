@@ -22,10 +22,12 @@ var User = sequelize.define('User', {
     allowNull: false,
     validate: {
       isLowercase: true,
+      isAlphanumeric: true, // No special characters
+      is: /^.*[A-Za-z]+.*$/, // Must contain at least one letter
     },
   },
   name: { type: Sequelize.STRING, allowNull: false},
-  email: { type: Sequelize.STRING, allowNull: false},
+  email: { type: Sequelize.STRING, allowNull: false, unique: true },
   image: { type: Sequelize.STRING, allowNull: false},
 });
 
@@ -38,15 +40,14 @@ var Follow = sequelize.define('Follow', {
     lastRead: Sequelize.BOOLEAN
 })
 
-Link.belongsTo(User, {
-  onDelete: "CASCADE",
-  foreignKey: {
-    allowNull: false
-  }
-});
-User.hasMany(Link);
-User.belongsToMany(User, { onDelete: "CASCADE", as: 'followers', through: 'Follow', foreignKey: 'follower' })
-User.belongsToMany(User, { onDelete: "CASCADE", as: 'following', through: 'Follow', foreignKey: 'followee' })
+// Link.belongsTo(User, {
+//   as: 'links',
+//   onDelete: "CASCADE",
+//   foreignKey: { allowNull: false }
+// });
+User.hasMany(Link, {as: 'links', onDelete: "CASCADE", foreignKey: { allowNull: false } });
+User.belongsToMany(User, { onDelete: "CASCADE", as: 'following', through: 'Follow', foreignKey: 'follower' })
+User.belongsToMany(User, { onDelete: "CASCADE", as: 'followers', through: 'Follow', foreignKey: 'followee' })
 
 
 const db = {
