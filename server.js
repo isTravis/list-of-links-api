@@ -4,11 +4,13 @@ if (process.env.NODE_ENV !== 'production') {
 
 const osprey = require('osprey');
 const express = require('express');
-var bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser')
 const join = require('path').join;
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
+app.use(cookieParser());
 
 const path = join(__dirname, 'api.raml');
 
@@ -72,6 +74,12 @@ osprey.loadFile(path).then(function (middleware) {
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
 		})
 		.then(function(user) {
+			// console.log('here');
+			// console.log(req.cookies);
+			// res.writeHead(200, {
+			//     'Set-Cookie': 'mycookie=test',
+			//   });
+			// res.end('yoo');
 			res.status(201).json(user);
 		})
 		.catch(function(err) {
