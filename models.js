@@ -7,6 +7,7 @@ if (process.env.NODE_ENV !== 'production') {
 import fs from 'fs';
 var path      = require("path");
 var Sequelize = require("sequelize");
+var passportLocalSequelize = require('passport-local-sequelize');
 
 var sequelize = new Sequelize(process.env.POSTGRES_URI);
 
@@ -29,6 +30,14 @@ var User = sequelize.define('User', {
   name: { type: Sequelize.STRING, allowNull: false},
   email: { type: Sequelize.STRING, allowNull: false, unique: true },
   image: { type: Sequelize.STRING, allowNull: false},
+  hash: Sequelize.TEXT,
+  salt: Sequelize.STRING
+});
+
+passportLocalSequelize.attachToUser(User, {
+    usernameField: 'username',
+    hashField: 'hash',
+    saltField: 'salt'
 });
 
 var Link = sequelize.define('Link', {

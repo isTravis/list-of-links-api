@@ -14,10 +14,65 @@ app.use(cookieParser());
 
 const path = join(__dirname, 'api.raml');
 
+const sequelize = require('./models').sequelize;
 const User = require('./models').User;
 const Link = require('./models').Link;
 const Follow = require('./models').Follow;
 
+/*--------*/
+// Configure app session
+/*--------*/
+const Sequelize = require('sequelize');
+const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
+app.use(session({
+	secret: 'superdupersecret',
+	resave: true,
+	saveUninitialized: true,
+	store: new SequelizeStore({
+	  db: sequelize
+	}),
+	cookie: {
+		path: '/',
+		domain: '',
+		httpOnly: false,
+		secure: false,
+		maxAge: 30 * 24 * 60 * 60 * 1000// = 30 days.
+	},
+}));
+
+/*--------*/
+// Configure app login
+/*--------*/
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+  	console.log('were using LocalStrategy');
+  	User.findOne({ where: {username: username} })
+	.then(function(user) {
+		console.log('found one user', user);
+		if (!user) { return done(null, false, { message: 'Incorrect username.' }); }
+		if (!user.validPassword(password)) { return done(null, false, { message: 'Incorrect password.' }); }
+		return done(null, user);
+	})
+	.catch(function(err) {
+		console.log('were in passport err', err);
+		return done(err);
+	});
+  }
+));
+
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser()); // use static serialize and deserialize of model for passport session support
+passport.deserializeUser(User.deserializeUser()); // use static serialize and deserialize of model for passport session support
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+/*--------*/
+// Start osprey server
+/*--------*/
 osprey.loadFile(path).then(function (middleware) {
 
 	app.use(middleware);
@@ -51,18 +106,21 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new user */
 	app.post('/user', function(req, res, next) {
-		User.create({
+		const newUser = {
 			username: req.body.username,
 			name: req.body.name,
 			image: req.body.image,
 			email: req.body.email,
-		})
-		.then(function() {
-			res.status(201).json({'success': true});
-		})
-		.catch(function(err) {
-			console.log(err);
-			res.status(500).json(err);
+		};
+		User.register(newUser, req.body.password, function(err, account) {
+			if (err) {
+				console.log('err is', err);
+				return res.status(500).json({'success': false});
+			}
+			
+			passport.authenticate('local')(req, res, function() {
+				return res.status(201).json({'success': true});
+			});
 		});
 	});
 
@@ -74,12 +132,6 @@ osprey.loadFile(path).then(function (middleware) {
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
 		})
 		.then(function(user) {
-			// console.log('here');
-			// console.log(req.cookies);
-			// res.writeHead(200, {
-			//     'Set-Cookie': 'mycookie=test',
-			//   });
-			// res.end('yoo');
 			res.status(201).json(user);
 		})
 		.catch(function(err) {

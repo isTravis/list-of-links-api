@@ -32,6 +32,9 @@ mediaType: application/json
           email:
             description: email for the new User to be created
             required: true
+          password: 
+            description: a hash of the users typed password
+            required: true
     responses:
       200:
         body:
