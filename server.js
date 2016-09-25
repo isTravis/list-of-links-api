@@ -22,7 +22,7 @@ const Follow = require('./models').Follow;
 /*--------*/
 // Configure app session
 /*--------*/
-const Sequelize = require('sequelize');
+// const Sequelize = require('sequelize');
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 app.use(session({
@@ -34,7 +34,7 @@ app.use(session({
 	}),
 	cookie: {
 		path: '/',
-		domain: '',
+		// domain: '127.0.0.1', // This was causing all sorts of mayhem. 
 		httpOnly: false,
 		secure: false,
 		maxAge: 30 * 24 * 60 * 60 * 1000// = 30 days.
@@ -48,26 +48,41 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 passport.use(new LocalStrategy(
   function(username, password, done) {
-  	console.log('were using LocalStrategy');
   	User.findOne({ where: {username: username} })
 	.then(function(user) {
-		console.log('found one user', user);
 		if (!user) { return done(null, false, { message: 'Incorrect username.' }); }
 		if (!user.validPassword(password)) { return done(null, false, { message: 'Incorrect password.' }); }
 		return done(null, user);
 	})
 	.catch(function(err) {
-		console.log('were in passport err', err);
+		console.log('Passport err', err);
 		return done(err);
 	});
   }
 ));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser()); // use static serialize and deserialize of model for passport session support
 passport.deserializeUser(User.deserializeUser()); // use static serialize and deserialize of model for passport session support
-app.use(passport.initialize());
-app.use(passport.session());
+
+passport.serializeUser(
+    function(id, done){
+    	console.log('Here is the serialize id', id)
+        
+        done(null, {});
+        
+});
+
+passport.deserializeUser(
+    function(id, done){
+    	console.log('Here is the id', id)
+        
+        done(null, {});
+        
+});
 
 
 /*--------*/
@@ -78,6 +93,7 @@ osprey.loadFile(path).then(function (middleware) {
 	app.use(middleware);
 
 	app.all('/*', function(req, res, next) {
+		console.log(req.originalUrl);
 		res.header("Access-Control-Allow-Origin", req.headers.origin);
 		res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
 		res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
@@ -104,6 +120,45 @@ osprey.loadFile(path).then(function (middleware) {
 	/* ------------------- */
 	/* ------------------- */
 
+	/* GET Login data by cookie*/
+	app.get('/login', function(req, res, next) {
+		const userID = req.user ? req.user.id : null;
+		User.findOne({
+			where: {id: userID},
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
+		})
+		.then(function(user) {
+			res.status(201).json(user);
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+	/* GET Login data by username, password and authenticate*/
+	app.post('/login', passport.authenticate('local'), function(req, res, next) {
+		const userID = req.user ? req.user.id : null;
+		User.findOne({
+			where: {id: userID},
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
+		})
+		.then(function(user) {
+			res.status(201).json(user);
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+	/* GET Logout a user */
+	app.get('/logout', function(req, res) {
+		req.logout();
+		res.status(201).json(true);
+	});
+	
+
 	/* POST a new user */
 	app.post('/user', function(req, res, next) {
 		const newUser = {
@@ -119,7 +174,11 @@ osprey.loadFile(path).then(function (middleware) {
 			}
 			
 			passport.authenticate('local')(req, res, function() {
-				return res.status(201).json({'success': true});
+				const output = {...account.dataValues};
+				delete output.hash;
+				delete output.salt;
+
+				return res.status(201).json(output);
 			});
 		});
 	});
@@ -170,7 +229,6 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new Link */
 	app.post('/link', function(req, res, next) {
-		console.log(req.body);
 		Link.create({
 			UserId: req.body.UserId,
 			title: req.body.title,

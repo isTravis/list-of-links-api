@@ -18,7 +18,7 @@ mediaType: application/json
     description: |
       Create a new User
     body:
-      application/x-www-form-urlencoded:
+      application/json:
         formParameters:
           username:
             description: username of the new User to be created
@@ -116,7 +116,7 @@ mediaType: application/json
       description: |
         Update the user with the given id
       body:
-        application/x-www-form-urlencoded:
+        application/json:
           formParameters:
             username:
               description: new username to update
@@ -168,7 +168,7 @@ mediaType: application/json
     description: |
       Create a new Link
     body:
-      application/x-www-form-urlencoded:
+      application/json:
         formParameters:
           UserId:
             description: id of the User creating the link
@@ -199,7 +199,7 @@ mediaType: application/json
       description: |
         Edit a link
       body:
-        application/x-www-form-urlencoded:
+        application/json:
           formParameters:
             title:
               description: updatedtitle of Link to be updated
@@ -246,7 +246,7 @@ mediaType: application/json
     description: |
       Create a new Follow
     body:
-      application/x-www-form-urlencoded:
+      application/json:
         formParameters:
           follower:
             description: id of the User who is following
@@ -274,7 +274,7 @@ mediaType: application/json
       description: |
         Update the lastRead value of a Follow
       body:
-        application/x-www-form-urlencoded:
+        application/json:
           formParameters:
             lastRead:
               description: date the follower last viewed the profile of the followee
@@ -313,4 +313,151 @@ mediaType: application/json
                   success: false
                 }
 
-  
+/login:
+  description: |
+    Routes to access login data and functionality
+  displayName: Login
+  get:
+    description: |
+      Get login data from browser cookie
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                  id: "2",
+                  username: "janedoe",
+                  name: "Jane Doe",
+                  image: "https://assets.pubpub.org/picture.jpg",
+                  links: [
+                    {
+                      title: "My new link",
+                      url: "http://www.link.com"
+                    },
+                    {
+                      title: "Another link",
+                      url: "http://www.link2.com"
+                    }
+                  ],
+                  following: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 1,
+                        followee: 2
+                      }
+                    }
+                  ],
+                  followers: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 2,
+                        followee: 1
+                      }
+                    }
+                  ]
+                }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                null
+              }
+  post:
+    description: |
+      Get login data from username and password
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                  id: "2",
+                  username: "janedoe",
+                  name: "Jane Doe",
+                  image: "https://assets.pubpub.org/picture.jpg",
+                  links: [
+                    {
+                      title: "My new link",
+                      url: "http://www.link.com"
+                    },
+                    {
+                      title: "Another link",
+                      url: "http://www.link2.com"
+                    }
+                  ],
+                  following: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 1,
+                        followee: 2
+                      }
+                    }
+                  ],
+                  followers: [
+                    {
+                      id: 2,
+                      username: "john",
+                      name: "John Micahels",
+                      image: "www.myimage.com",
+                      followerLinks: {
+                        inactive: null,
+                        createdAt: "2016-09-07T18:06:52.655Z",
+                        updatedAt: "2016-09-07T18:06:52.655Z",
+                        follower: 2,
+                        followee: 1
+                      }
+                    }
+                  ]
+                }
+      500:
+        body:
+          application/json:
+            example: |
+              {
+                success: false
+              }
+/logout:
+  description: |
+    Route to logout a user
+  displayName: Login
+  get:
+    description: |
+      Logout a user.
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                success:true
+              }
+      401:
+        body:
+          application/json:
+            example: |
+              {
+                Unauthorized
+              }
