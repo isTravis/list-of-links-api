@@ -68,6 +68,10 @@ passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser()); // use static serialize and deserialize of model for passport session support
 passport.deserializeUser(User.deserializeUser()); // use static serialize and deserialize of model for passport session support
 
+module.exports = app;
+
+require('./uploadPolicy');
+
 /*--------*/
 // Start osprey server
 /*--------*/
@@ -356,7 +360,6 @@ osprey.loadFile(path).then(function (middleware) {
 	// 		res.status(500).json(err);
 	// 	});
 	// });
-
 
 	const port = process.env.PORT || 9876;
 	app.listen(port, (err) => {
