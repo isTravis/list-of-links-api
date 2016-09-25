@@ -68,23 +68,6 @@ passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser()); // use static serialize and deserialize of model for passport session support
 passport.deserializeUser(User.deserializeUser()); // use static serialize and deserialize of model for passport session support
 
-passport.serializeUser(
-    function(id, done){
-    	console.log('Here is the serialize id', id)
-        
-        done(null, {});
-        
-});
-
-passport.deserializeUser(
-    function(id, done){
-    	console.log('Here is the id', id)
-        
-        done(null, {});
-        
-});
-
-
 /*--------*/
 // Start osprey server
 /*--------*/
@@ -93,7 +76,6 @@ osprey.loadFile(path).then(function (middleware) {
 	app.use(middleware);
 
 	app.all('/*', function(req, res, next) {
-		console.log(req.originalUrl);
 		res.header("Access-Control-Allow-Origin", req.headers.origin);
 		res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
 		res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
@@ -136,7 +118,7 @@ osprey.loadFile(path).then(function (middleware) {
 		});
 	});
 
-	/* GET Login data by username, password and authenticate*/
+	/* POST Login data by username, password and authenticate*/
 	app.post('/login', passport.authenticate('local'), function(req, res, next) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
@@ -229,13 +211,14 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new Link */
 	app.post('/link', function(req, res, next) {
+		const user = req.user || {};
 		Link.create({
-			UserId: req.body.UserId,
+			UserId: user.id || req.body.UserId,
 			title: req.body.title,
 			url: req.body.url,
 		})
-		.then(function() {
-			res.status(201).json({'success': true});
+		.then(function(link) {
+			res.status(201).json(link);
 		})
 		.catch(function(err) {
 			console.log(err);
