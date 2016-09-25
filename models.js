@@ -46,7 +46,7 @@ var Link = sequelize.define('Link', {
 });
 
 var Follow = sequelize.define('Follow', {
-    lastRead: Sequelize.BOOLEAN
+    lastRead: Sequelize.DATE()
 })
 
 // Link.belongsTo(User, {

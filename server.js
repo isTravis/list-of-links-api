@@ -107,10 +107,12 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
+			attributes: { exclude: ['salt', 'hash'] },
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
-			res.status(201).json(user);
+			const output = {...user.dataValues};
+			res.status(201).json(output);
 		})
 		.catch(function(err) {
 			console.log(err);
@@ -123,10 +125,12 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
+			attributes: { exclude: ['salt', 'hash'] },
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
-			res.status(201).json(user);
+			const output = {...user.dataValues};
+			res.status(201).json(output);
 		})
 		.catch(function(err) {
 			console.log(err);
@@ -170,7 +174,7 @@ osprey.loadFile(path).then(function (middleware) {
 		const query = isNaN(req.params.id) ? {username: req.params.id} : {id: req.params.id};
 		User.findOne({
 			where: query,
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower'}, {model: User, as: 'following', foreignKey: 'followee'} ]
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
 			res.status(201).json(user);
@@ -256,9 +260,65 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new Follow */
 	app.post('/follow', function(req, res, next) {
-		Follow.create({
-			follower: req.body.follower,
-			followee: req.body.followee,
+		const user = req.user || {};
+		const follower = user.id || req.body.follower;
+		const followee = req.body.followee;
+
+		// Do not create a Follow is follower and followee are equal
+		if (follower === followee) {
+			return res.status(500).json('Follower cannot be followee');
+		}
+
+		Follow.findOne({where: {follower: follower, followee: followee}})
+		.then(function(existingFollow) {
+			if (existingFollow) { throw new Error('Follow already exists'); }
+			return Follow.create({
+				follower: follower,
+				followee: followee,
+				lastRead: req.body.lastRead || null,
+			});
+		})
+		.then(function(follow) {
+			const findUser = User.findOne({
+				where: {id: follow.followee},
+				attributes: { exclude: ['salt', 'hash'] },
+				include: [{model: Link, as: 'links'}],
+			});
+			return [follow, findUser];
+		})
+		.spread(function(follow, user) {
+			const output = {
+				...user.dataValues,
+				Follow: follow
+			}
+			res.status(201).json(output);
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+	/* PUT an update to one Follow */
+	app.put('/follow', function(req, res, next) {
+		const user = req.user || {};
+		Follow.update(req.body, {
+			where: {follower: user.id || req.body.follower, followee: req.body.followee}
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+	/* DELETE an update to one Follow */
+	app.delete('/follow', function(req, res, next) {
+		const user = req.user || {};
+		Follow.destroy({
+			where: {follower: user.id || req.body.follower, followee: req.body.followee}
 		})
 		.then(function() {
 			res.status(201).json({'success': true});
@@ -270,32 +330,32 @@ osprey.loadFile(path).then(function (middleware) {
 	});
 
 	/* PUT an update to one Follow */
-	app.put('/follow/:id', function(req, res, next) {
-		Follow.update(req.body, {
-			where: {id: req.params.id}
-		})
-		.then(function() {
-			res.status(201).json({'success': true});
-		})
-		.catch(function(err) {
-			console.log(err);
-			res.status(500).json(err);
-		});
-	});
+	// app.put('/follow/:id', function(req, res, next) {
+	// 	Follow.update(req.body, {
+	// 		where: {id: req.params.id}
+	// 	})
+	// 	.then(function() {
+	// 		res.status(201).json({'success': true});
+	// 	})
+	// 	.catch(function(err) {
+	// 		console.log(err);
+	// 		res.status(500).json(err);
+	// 	});
+	// });
 
 	/* Delete a Follow */
-	app.delete('/follow/:id', function(req, res, next) {
-		Follow.destroy({
-			where: {id: req.params.id}
-		})
-		.then(function() {
-			res.status(201).json({'success': true});
-		})
-		.catch(function(err) {
-			console.log(err);
-			res.status(500).json(err);
-		});
-	});
+	// app.delete('/follow/:id', function(req, res, next) {
+	// 	Follow.destroy({
+	// 		where: {id: req.params.id}
+	// 	})
+	// 	.then(function() {
+	// 		res.status(201).json({'success': true});
+	// 	})
+	// 	.catch(function(err) {
+	// 		console.log(err);
+	// 		res.status(500).json(err);
+	// 	});
+	// });
 
 
 	const port = process.env.PORT || 9876;

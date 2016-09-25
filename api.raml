@@ -80,13 +80,23 @@ mediaType: application/json
                       username: "john",
                       name: "John Micahels",
                       image: "www.myimage.com",
-                      followerLinks: {
-                        inactive: null,
+                      Follow: {
+                        lastRead: "2016-09-07T18:06:52.655Z",
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
                         follower: 1,
                         followee: 2
-                      }
+                      },
+                      links: [
+                        {
+                          title: "My new link",
+                          url: "http://www.link.com"
+                        },
+                        {
+                          title: "Another link",
+                          url: "http://www.link2.com"
+                        }
+                      ]
                     }
                   ],
                   followers: [
@@ -95,8 +105,8 @@ mediaType: application/json
                       username: "john",
                       name: "John Micahels",
                       image: "www.myimage.com",
-                      followerLinks: {
-                        inactive: null,
+                      Follow: {
+                        lastRead: "2016-09-07T18:06:52.655Z",
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
                         follower: 2,
@@ -250,8 +260,7 @@ mediaType: application/json
       application/json:
         formParameters:
           follower:
-            description: id of the User who is following
-            required: true
+            description: id of the follower. Can be passed in through session data.
           followee:
             description: id of the User who is being followed
             required: true
@@ -261,7 +270,27 @@ mediaType: application/json
           application/json:
             example: |
               {
-                success: true
+                id: 2,
+                username: "john",
+                name: "John Micahels",
+                image: "www.myimage.com",
+                Follow: {
+                  lastRead: "2016-09-07T18:06:52.655Z",
+                  createdAt: "2016-09-07T18:06:52.655Z",
+                  updatedAt: "2016-09-07T18:06:52.655Z",
+                  follower: 1,
+                  followee: 2
+                },
+                links: [
+                  {
+                    title: "My new link",
+                    url: "http://www.link.com"
+                  },
+                  {
+                    title: "Another link",
+                    url: "http://www.link2.com"
+                  }
+                ]
               }
       404:
         body:
@@ -270,13 +299,18 @@ mediaType: application/json
               {
                 success: false
               }
-  /{id}:
-    put:
+  put:
       description: |
-        Update the lastRead value of a Follow
+        Update the lastRead value of a Follow by follower and followee
       body:
         application/json:
           formParameters:
+            follower:
+              description: id of the follower. Can be passed in through session data.
+              type: integer
+            followee:
+              description: id of the followee
+              type: integer
             lastRead:
               description: date the follower last viewed the profile of the followee
               type: date
@@ -295,9 +329,18 @@ mediaType: application/json
                 {
                   success: false
                 }
-    delete:
+  delete:
       description: |
-        Delete a Follow
+        Delete a follow
+      body:
+        application/json:
+          formParameters:
+            follower:
+              description: id of the follower. Can be passed in through session data.
+              type: integer
+            followee:
+              description: id of the followee
+              type: integer
       responses:
         200:
           body:
@@ -313,7 +356,6 @@ mediaType: application/json
                 {
                   success: false
                 }
-
 /login:
   description: |
     Routes to access login data and functionality
@@ -347,13 +389,23 @@ mediaType: application/json
                       username: "john",
                       name: "John Micahels",
                       image: "www.myimage.com",
-                      followerLinks: {
+                      Follow: {
                         inactive: null,
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
                         follower: 1,
                         followee: 2
-                      }
+                      },
+                      links: [
+                        {
+                          title: "My new link",
+                          url: "http://www.link.com"
+                        },
+                        {
+                          title: "Another link",
+                          url: "http://www.link2.com"
+                        }
+                      ]
                     }
                   ],
                   followers: [
@@ -362,7 +414,7 @@ mediaType: application/json
                       username: "john",
                       name: "John Micahels",
                       image: "www.myimage.com",
-                      followerLinks: {
+                      Follow: {
                         inactive: null,
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
@@ -409,7 +461,7 @@ mediaType: application/json
                       name: "John Micahels",
                       image: "www.myimage.com",
                       followerLinks: {
-                        inactive: null,
+                        lastRead: "2016-09-07T18:06:52.655Z",
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
                         follower: 1,
@@ -423,8 +475,8 @@ mediaType: application/json
                       username: "john",
                       name: "John Micahels",
                       image: "www.myimage.com",
-                      followerLinks: {
-                        inactive: null,
+                      Follow: {
+                        lastRead: "2016-09-07T18:06:52.655Z",
                         createdAt: "2016-09-07T18:06:52.655Z",
                         updatedAt: "2016-09-07T18:06:52.655Z",
                         follower: 2,
