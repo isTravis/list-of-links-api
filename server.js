@@ -7,7 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
 const join = require('path').join;
-const app = express();
+const app = express({rejectUnauthorized: false});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cookieParser());
@@ -77,10 +77,6 @@ require('./uploadPolicy');
 app.get('/favicon.ico', function(req, res) {
 	res.writeHead(200, { 'Content-Type': 'image/x-icon' });
 	res.end();
-});
-
-app.get('/.well-known/acme-challenge/ZmbyMU7EhDsmfjOlh7Rh7rf-cxHRGTS3n0NwRP5nPtg', function(req, res) {
-	res.send('ZmbyMU7EhDsmfjOlh7Rh7rf-cxHRGTS3n0NwRP5nPtg.t4GiXyju_RoxyU_6E3vrHKYnR2IuK__YTJQI-sc78os');
 });
 
 /*--------*/
