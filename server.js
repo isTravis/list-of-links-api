@@ -72,6 +72,13 @@ module.exports = app;
 
 require('./uploadPolicy');
 
+// Short-circuit the browser's annoying favicon request. You can still
+// specify one as long as it doesn't have this exact name and path.
+server.get('/favicon.ico', function(req, res) {
+	res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+	res.end();
+});
+
 /*--------*/
 // Start osprey server
 /*--------*/
