@@ -79,6 +79,10 @@ app.get('/favicon.ico', function(req, res) {
 	res.end();
 });
 
+app.get('/.well-known/acme-challenge/co2whLzRY9UZLx8zSnGpFkdSzw0wtxPee77sBELDuDk', function(req, res) {
+	res.send('co2whLzRY9UZLx8zSnGpFkdSzw0wtxPee77sBELDuDk.t4GiXyju_RoxyU_6E3vrHKYnR2IuK__YTJQI-sc78os');
+});
+
 /*--------*/
 // Start osprey server
 /*--------*/
