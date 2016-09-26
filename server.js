@@ -79,8 +79,8 @@ app.get('/favicon.ico', function(req, res) {
 	res.end();
 });
 
-app.get('/.well-known/acme-challenge/co2whLzRY9UZLx8zSnGpFkdSzw0wtxPee77sBELDuDk', function(req, res) {
-	res.send('co2whLzRY9UZLx8zSnGpFkdSzw0wtxPee77sBELDuDk.t4GiXyju_RoxyU_6E3vrHKYnR2IuK__YTJQI-sc78os');
+app.get('/.well-known/acme-challenge/ZmbyMU7EhDsmfjOlh7Rh7rf-cxHRGTS3n0NwRP5nPtg', function(req, res) {
+	res.send('ZmbyMU7EhDsmfjOlh7Rh7rf-cxHRGTS3n0NwRP5nPtg.t4GiXyju_RoxyU_6E3vrHKYnR2IuK__YTJQI-sc78os');
 });
 
 /*--------*/
