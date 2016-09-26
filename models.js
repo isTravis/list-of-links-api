@@ -42,7 +42,13 @@ passportLocalSequelize.attachToUser(User, {
 
 var Link = sequelize.define('Link', {
   title: { type: Sequelize.TEXT, allowNull: false},
-  url: { type: Sequelize.STRING, allowNull: false},
+  url: { 
+    type: Sequelize.TEXT, 
+    allowNull: false,
+    validate: {
+      isUrl: true,
+    },
+  },
 });
 
 var Follow = sequelize.define('Follow', {
