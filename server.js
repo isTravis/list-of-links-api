@@ -7,7 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
 const join = require('path').join;
-const app = express({rejectUnauthorized: false});
+const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cookieParser());
@@ -122,6 +122,7 @@ osprey.loadFile(path).then(function (middleware) {
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
+			if (!user) { return res.status(201).json({}); }
 			const output = {...user.dataValues};
 			res.status(201).json(output);
 		})
@@ -140,6 +141,7 @@ osprey.loadFile(path).then(function (middleware) {
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
+			if (!user) { return res.status(201).json({}); }
 			const output = {...user.dataValues};
 			res.status(201).json(output);
 		})
