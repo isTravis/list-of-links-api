@@ -28,8 +28,16 @@ var User = sequelize.define('User', {
     },
   },
   name: { type: Sequelize.STRING, allowNull: false},
-  email: { type: Sequelize.STRING, allowNull: false, unique: true },
+  email: { 
+    type: Sequelize.STRING, 
+    allowNull: false, 
+    unique: true,
+    validate: {
+      isEmail: true
+    } 
+  },
   image: { type: Sequelize.STRING, allowNull: false},
+  // apiToken: Sequelize.STRING,
   hash: Sequelize.TEXT,
   salt: Sequelize.STRING
 });

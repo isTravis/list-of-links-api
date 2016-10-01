@@ -79,6 +79,16 @@ app.get('/favicon.ico', function(req, res) {
 	res.end();
 });
 
+const generateAPIToken = function() {
+	let apiToken = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+	for ( let index = 0; index < 12; index++) {
+		apiToken += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return apiToken;
+}
+
 /*--------*/
 // Start osprey server
 /*--------*/
@@ -160,16 +170,25 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new user */
 	app.post('/user', function(req, res, next) {
+		
 		const newUser = {
 			username: req.body.username,
 			name: req.body.name,
 			image: req.body.image,
 			email: req.body.email,
+			// apiToken: generateAPIToken(),
 		};
 		User.register(newUser, req.body.password, function(err, account) {
 			if (err) {
-				console.log('err is', err);
-				return res.status(500).json({'success': false});
+				const errorSimple = err.message || '';
+				const errorsArray = err.errors || [];
+				const errorSpecific = errorsArray[0] || {};
+
+				if (errorSimple.indexOf('User already exists') > -1) { return res.status(500).json('Username already used'); }
+				if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
+				if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
+				
+				return res.status(500).json('Error');
 			}
 			
 			passport.authenticate('local')(req, res, function() {
