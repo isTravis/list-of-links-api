@@ -188,7 +188,9 @@ osprey.loadFile(path).then(function (middleware) {
 				if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
 				if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
 
-				return res.status(500).json('Error');
+				console.log('Error registering user');
+				console.log(err);
+				return res.status(500).json(JSON.stringify(err));
 			}
 			
 			passport.authenticate('local')(req, res, function() {
