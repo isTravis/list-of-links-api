@@ -83,7 +83,7 @@ const generateAPIToken = function() {
 	let apiToken = '';
 	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-	for ( let index = 0; index < 12; index++) {
+	for ( let index = 0; index < 16; index++) {
 		apiToken += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
 	return apiToken;
@@ -128,8 +128,8 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			attributes: { exclude: ['salt', 'hash'] },
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
+			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
 			if (!user) { return res.status(201).json({}); }
@@ -147,8 +147,8 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			attributes: { exclude: ['salt', 'hash'] },
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
+			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
 			if (!user) { return res.status(201).json({}); }
@@ -176,7 +176,7 @@ osprey.loadFile(path).then(function (middleware) {
 			name: req.body.name,
 			image: req.body.image,
 			email: req.body.email,
-			// apiToken: generateAPIToken(),
+			apiToken: generateAPIToken(),
 		};
 		User.register(newUser, req.body.password, function(err, account) {
 			if (err) {
@@ -187,7 +187,7 @@ osprey.loadFile(path).then(function (middleware) {
 				if (errorSimple.indexOf('User already exists') > -1) { return res.status(500).json('Username already used'); }
 				if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
 				if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
-				
+
 				return res.status(500).json('Error');
 			}
 			
@@ -195,18 +195,71 @@ osprey.loadFile(path).then(function (middleware) {
 				const output = {...account.dataValues};
 				delete output.hash;
 				delete output.salt;
+				delete output.email;
+				delete output.createdAt;
+				delete output.updatedAt;
+				delete output.apiToken;
 
 				return res.status(201).json(output);
 			});
 		});
 	});
 
+	/* GET search for users */
+	app.get('/search/:string', function(req, res, next) {
+		User.findAll({
+			where: {	
+				$or: [
+					{ 'username': { ilike: '%' + req.params.string + '%' } },
+					{ 'name': { ilike: '%' + req.params.string + '%' } },
+				]
+			},
+			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }
+		})
+		.then(function(users) {
+			res.status(201).json(users);
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+
+	/* GET Recently active users */
+	app.get('/recent', function(req, res, next) {
+		Link.findAll({
+			order: [ [ 'createdAt', 'DESC' ]],
+			limit: 50,
+		})
+		.then(function(recentLinks) {
+			const userIDs = recentLinks.map((link)=> {
+				return link.UserId;
+			});
+			return User.findAll({
+				where: {
+					id: userIDs,
+				},
+				attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }
+			});
+		})
+		.then(function(users) {
+			res.status(201).json(users);
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
+
+
 	/* GET one user by username or id*/
 	app.get('/user/:id', function(req, res, next) {
 		const query = isNaN(req.params.id) ? {username: req.params.id} : {id: req.params.id};
 		User.findOne({
 			where: query,
-			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash'] }, include: [{model: Link, as: 'links'}]} ]
+			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
+			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
 			res.status(201).json(user);
@@ -219,6 +272,9 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* PUT an update to one user */
 	app.put('/user/:id', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined;
+		if (userID !== req.params.id) {return res.status(400).json('Unauthorized')}
+
 		User.update(req.body, {
 			where: {id: req.params.id}
 		})
@@ -233,6 +289,9 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* Delete a user */
 	app.delete('/user/:id', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined;
+		if (userID !== req.params.id) {return res.status(400).json('Unauthorized')}
+
 		User.destroy({
 			where: {id: req.params.id}
 		})
@@ -247,10 +306,13 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new Link */
 	app.post('/link', function(req, res, next) {
-		const user = req.user || {};
+		const userID = req.user ? req.user.id : undefined;
+		// const userIDKey = userID || req.body.UserId; // Use this once we have API tokens
+		const userIDKey = userID;
+
 		Link.create({
-			UserId: user.id || req.body.UserId,
-			title: req.body.title,
+			UserId: userIDKey,
+			description: req.body.description,
 			url: req.body.url,
 		})
 		.then(function(link) {
@@ -264,8 +326,16 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* PUT an update to one link */
 	app.put('/link/:id', function(req, res, next) {
-		Link.update(req.body, {
+		const userID = req.user ? req.user.id : undefined;
+
+		Link.findOne({
 			where: {id: req.params.id}
+		})
+		.then(function(link) {
+			if (link.UserID !== userID) { throw new Error('Unauthorized'); }
+			return Link.update(req.body, {
+				where: {id: req.params.id}
+			});
 		})
 		.then(function() {
 			res.status(201).json({'success': true});
@@ -278,8 +348,16 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* Delete a Link */
 	app.delete('/link/:id', function(req, res, next) {
-		Link.destroy({
+		const userID = req.user ? req.user.id : undefined;
+
+		Link.findOne({
 			where: {id: req.params.id}
+		})
+		.then(function(link) {
+			if (link.UserID !== userID) { throw new Error('Unauthorized'); }
+			return Link.destroy({
+				where: {id: req.params.id}
+			});
 		})
 		.then(function() {
 			res.status(201).json({'success': true});
@@ -293,7 +371,8 @@ osprey.loadFile(path).then(function (middleware) {
 	/* POST a new Follow */
 	app.post('/follow', function(req, res, next) {
 		const user = req.user || {};
-		const follower = user.id || req.body.follower;
+		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
+		const follower = user.id;
 		const followee = req.body.followee;
 
 		// Do not create a Follow is follower and followee are equal
@@ -313,7 +392,7 @@ osprey.loadFile(path).then(function (middleware) {
 		.then(function(follow) {
 			const findUser = User.findOne({
 				where: {id: follow.followee},
-				attributes: { exclude: ['salt', 'hash'] },
+				attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
 				include: [{model: Link, as: 'links'}],
 			});
 			return [follow, findUser];
@@ -334,8 +413,10 @@ osprey.loadFile(path).then(function (middleware) {
 	/* PUT an update to one Follow */
 	app.put('/follow', function(req, res, next) {
 		const user = req.user || {};
+		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
+		const follower = user.id;
 		Follow.update(req.body, {
-			where: {follower: user.id || req.body.follower, followee: req.body.followee}
+			where: {follower: follower, followee: req.body.followee}
 		})
 		.then(function() {
 			res.status(201).json({'success': true});
@@ -349,8 +430,10 @@ osprey.loadFile(path).then(function (middleware) {
 	/* DELETE an update to one Follow */
 	app.delete('/follow', function(req, res, next) {
 		const user = req.user || {};
+		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
+		const follower = user.id;
 		Follow.destroy({
-			where: {follower: user.id || req.body.follower, followee: req.body.followee}
+			where: {follower: follower, followee: req.body.followee}
 		})
 		.then(function() {
 			res.status(201).json({'success': true});

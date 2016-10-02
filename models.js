@@ -37,7 +37,7 @@ var User = sequelize.define('User', {
     } 
   },
   image: { type: Sequelize.STRING, allowNull: false},
-  // apiToken: Sequelize.STRING,
+  apiToken: Sequelize.STRING,
   hash: Sequelize.TEXT,
   salt: Sequelize.STRING
 });
@@ -49,7 +49,7 @@ passportLocalSequelize.attachToUser(User, {
 });
 
 var Link = sequelize.define('Link', {
-  title: { type: Sequelize.TEXT, allowNull: false},
+  description: { type: Sequelize.TEXT, allowNull: false},
   url: { 
     type: Sequelize.TEXT, 
     allowNull: false,

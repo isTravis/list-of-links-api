@@ -66,11 +66,11 @@ mediaType: application/json
                   image: "https://assets.pubpub.org/picture.jpg",
                   links: [
                     {
-                      title: "My new link",
+                      description: "My new link",
                       url: "http://www.link.com"
                     },
                     {
-                      title: "Another link",
+                      description: "Another link",
                       url: "http://www.link2.com"
                     }
                   ],
@@ -89,11 +89,11 @@ mediaType: application/json
                       },
                       links: [
                         {
-                          title: "My new link",
+                          description: "My new link",
                           url: "http://www.link.com"
                         },
                         {
-                          title: "Another link",
+                          description: "Another link",
                           url: "http://www.link2.com"
                         }
                       ]
@@ -170,6 +170,50 @@ mediaType: application/json
                 {
                   error : "User not found"
                 }
+/search/{string}:
+  get:
+    description: |
+      Search for users by name and username
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [{
+                id: "2",
+                username: "janedoe",
+                name: "Jane Doe",
+                image: "https://assets.pubpub.org/picture.jpg",
+              }]
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "Error"
+              }  
+/recent:
+  get:
+    description: |
+      List of users who have recently posted links
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [{
+                id: "2",
+                username: "janedoe",
+                name: "Jane Doe",
+                image: "https://assets.pubpub.org/picture.jpg",
+              }]
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "Error"
+              }  
 /link:
   description: |
     Routes to access data about ListOfLinks Link
@@ -183,8 +227,8 @@ mediaType: application/json
           UserId:
             description: id of the User creating the link
             required: true
-          title:
-            description: title of the Link to be created
+          description:
+            description: description of the Link to be created
             required: true
           url:
             description: url of the new Link to be created
@@ -195,7 +239,7 @@ mediaType: application/json
           application/json:
             example: |
               {
-                title: "Another link",
+                description: "Another link",
                 url: "http://www.link2.com"
               }
       404:
@@ -212,10 +256,10 @@ mediaType: application/json
       body:
         application/json:
           formParameters:
-            title:
-              description: updatedtitle of Link to be updated
+            descritpion:
+              description: updated descritpion of Link to be updated
             url:
-              description: updatedurl of the Link to be updated
+              description: updated url of the Link to be updated
       responses:
         200:
           body:
@@ -283,11 +327,11 @@ mediaType: application/json
                 },
                 links: [
                   {
-                    title: "My new link",
+                    description: "My new link",
                     url: "http://www.link.com"
                   },
                   {
-                    title: "Another link",
+                    description: "Another link",
                     url: "http://www.link2.com"
                   }
                 ]
@@ -375,11 +419,11 @@ mediaType: application/json
                   image: "https://assets.pubpub.org/picture.jpg",
                   links: [
                     {
-                      title: "My new link",
+                      description: "My new link",
                       url: "http://www.link.com"
                     },
                     {
-                      title: "Another link",
+                      description: "Another link",
                       url: "http://www.link2.com"
                     }
                   ],
@@ -398,11 +442,11 @@ mediaType: application/json
                       },
                       links: [
                         {
-                          title: "My new link",
+                          description: "My new link",
                           url: "http://www.link.com"
                         },
                         {
-                          title: "Another link",
+                          description: "Another link",
                           url: "http://www.link2.com"
                         }
                       ]
@@ -446,11 +490,11 @@ mediaType: application/json
                   image: "https://assets.pubpub.org/picture.jpg",
                   links: [
                     {
-                      title: "My new link",
+                      description: "My new link",
                       url: "http://www.link.com"
                     },
                     {
-                      title: "Another link",
+                      description: "Another link",
                       url: "http://www.link2.com"
                     }
                   ],
