@@ -7,6 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
 const join = require('path').join;
+const Promise = require('bluebird');
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
@@ -128,7 +129,7 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
+			attributes: { exclude: ['salt', 'hash', 'createdAt', 'updatedAt'] },
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
@@ -147,7 +148,7 @@ osprey.loadFile(path).then(function (middleware) {
 		const userID = req.user ? req.user.id : null;
 		User.findOne({
 			where: {id: userID},
-			attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] },
+			attributes: { exclude: ['salt', 'hash', 'createdAt', 'updatedAt'] },
 			include: [ {model: Link, as: 'links'}, {model: User, as: 'followers', foreignKey: 'follower', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] } }, {model: User, as: 'following', foreignKey: 'followee', attributes: { exclude: ['salt', 'hash', 'apiToken', 'email', 'createdAt', 'updatedAt'] }, include: [{model: Link, as: 'links'}]} ]
 		})
 		.then(function(user) {
@@ -165,46 +166,6 @@ osprey.loadFile(path).then(function (middleware) {
 	app.get('/logout', function(req, res) {
 		req.logout();
 		res.status(201).json(true);
-	});
-	
-
-	/* POST a new user */
-	app.post('/user', function(req, res, next) {
-		
-		const newUser = {
-			username: req.body.username,
-			name: req.body.name,
-			image: req.body.image,
-			email: req.body.email,
-			apiToken: generateAPIToken(),
-		};
-		User.register(newUser, req.body.password, function(err, account) {
-			if (err) {
-				const errorSimple = err.message || '';
-				const errorsArray = err.errors || [];
-				const errorSpecific = errorsArray[0] || {};
-
-				if (errorSimple.indexOf('User already exists') > -1) { return res.status(500).json('Username already used'); }
-				if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
-				if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
-
-				console.log('Error registering user');
-				console.log(err);
-				return res.status(500).json(JSON.stringify(err));
-			}
-			
-			passport.authenticate('local')(req, res, function() {
-				const output = {...account.dataValues};
-				delete output.hash;
-				delete output.salt;
-				delete output.email;
-				delete output.createdAt;
-				delete output.updatedAt;
-				delete output.apiToken;
-
-				return res.status(201).json(output);
-			});
-		});
 	});
 
 	/* GET search for users */
@@ -253,6 +214,144 @@ osprey.loadFile(path).then(function (middleware) {
 			res.status(500).json(err);
 		});
 	});
+	
+
+	/* POST a new user */
+	app.post('/user', function(req, res, next) {
+		
+		const newUser = {
+			username: req.body.username,
+			name: req.body.name,
+			image: req.body.image,
+			email: req.body.email,
+			apiToken: generateAPIToken(),
+		};
+		User.register(newUser, req.body.password, function(err, account) {
+			if (err) {
+				const errorSimple = err.message || '';
+				const errorsArray = err.errors || [];
+				const errorSpecific = errorsArray[0] || {};
+
+				if (errorSimple.indexOf('User already exists') > -1) { return res.status(500).json('Username already used'); }
+				if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
+				if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
+				if (errorSpecific.message === 'Validation isAlphanumeric failed') { return res.status(500).json('Username can only contain letters and numbers'); }
+
+				console.log('Error registering user');
+				console.log(err);
+				return res.status(500).json(JSON.stringify(err));
+			}
+			
+			passport.authenticate('local')(req, res, function() {
+				const output = {...account.dataValues};
+				delete output.hash;
+				delete output.salt;
+				delete output.createdAt;
+				delete output.updatedAt;
+
+				return res.status(201).json(output);
+			});
+		});
+	});
+
+	
+
+	/* PUT an update to one user */
+	app.put('/user', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+		User.update(req.body, {
+			where: query
+		})
+		.then(function(updatedCount) {
+			if (!updatedCount[0]) { throw new Error('Invalid API Token or cookie'); }
+			res.status(201).json({success: true});
+		})
+		.catch(function(err) {
+			const errorSimple = err.message || '';
+			const errorsArray = err.errors || [];
+			const errorSpecific = errorsArray[0] || {};
+
+			if (errorSimple.indexOf('Invalid API Token or cookie') > -1) { return res.status(500).json('Invalid API Token or cookie'); }
+			if (errorSimple.indexOf('User already exists') > -1) { return res.status(500).json('Username already used'); }
+			if (errorSpecific.message === 'username must be unique') { return res.status(500).json('Username already used'); }
+			if (errorSpecific.message === 'email must be unique') { return res.status(500).json('Email already used'); }
+			if (errorSpecific.message === 'Validation isEmail failed') { return res.status(500).json('Not a valid email'); }
+			if (errorSpecific.message === 'Validation isAlphanumeric failed') { return res.status(500).json('Username can only contain letters and numbers'); }
+
+			console.log('Error Updating user');
+			console.log(err);
+			return res.status(500).json(JSON.stringify(err));
+		});
+	});
+
+	/* PUT an update to one user's token */
+	app.put('/token', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+
+		const newToken = generateAPIToken();
+
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+		User.update({apiToken: newToken}, {
+			where: query
+		})
+		.then(function() {
+			res.status(201).json({apiToken: newToken});
+		})
+		.catch(function(err) {
+			return res.status(500).json(JSON.stringify(err));
+		});
+	});
+
+	/* PUT an update to one user's password */
+	app.put('/password', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+		User.findOne({
+			where: query
+		})
+		.then(function(user) {
+			user.authenticate(req.body.oldPassword, function(authErr, authResult) {
+				if (authErr || !authResult) { return res.status(400).json('Old password incorrect'); }
+				
+				authResult.setPassword(req.body.newPassword, function(setErr, setResult) {
+					if (setErr) { return res.status(400).json('Error saving new password'); }
+					setResult.save()
+					return res.status(201).json({sucess: true});	
+				});
+			})
+		})
+		.catch(function(err) {
+			return res.status(500).json(JSON.stringify(err));
+		});
+	});
+
+	/* Delete a user */
+	app.delete('/user', function(req, res, next) {
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+		User.destroy({
+			where: query
+		})
+		.then(function() {
+			res.status(201).json({'success': true});
+		})
+		.catch(function(err) {
+			console.log(err);
+			res.status(500).json(err);
+		});
+	});
 
 
 	/* GET one user by username or id*/
@@ -272,74 +371,67 @@ osprey.loadFile(path).then(function (middleware) {
 		});
 	});
 
-	/* PUT an update to one user */
-	app.put('/user/:id', function(req, res, next) {
-		const userID = req.user ? req.user.id : undefined;
-		if (userID !== req.params.id) {return res.status(400).json('Unauthorized')}
-
-		User.update(req.body, {
-			where: {id: req.params.id}
-		})
-		.then(function() {
-			res.status(201).json({'success': true});
-		})
-		.catch(function(err) {
-			console.log(err);
-			res.status(500).json(err);
-		});
-	});
-
-	/* Delete a user */
-	app.delete('/user/:id', function(req, res, next) {
-		const userID = req.user ? req.user.id : undefined;
-		if (userID !== req.params.id) {return res.status(400).json('Unauthorized')}
-
-		User.destroy({
-			where: {id: req.params.id}
-		})
-		.then(function() {
-			res.status(201).json({'success': true});
-		})
-		.catch(function(err) {
-			console.log(err);
-			res.status(500).json(err);
-		});
-	});
 
 	/* POST a new Link */
 	app.post('/link', function(req, res, next) {
-		const userID = req.user ? req.user.id : undefined;
+		// const userID = req.user ? req.user.id : undefined;
 		// const userIDKey = userID || req.body.UserId; // Use this once we have API tokens
-		const userIDKey = userID;
+		// const userIDKey = userID;
 
-		Link.create({
-			UserId: userIDKey,
-			description: req.body.description,
-			url: req.body.url,
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+
+		User.findOne({
+			where: query
+		})
+		.then(function(user) {
+			if (!user) {return res.status(400).json('Unauthorized')}
+			return Link.create({
+				UserId: user.id,
+				description: req.body.description,
+				url: req.body.url,
+			});
 		})
 		.then(function(link) {
 			res.status(201).json(link);
 		})
 		.catch(function(err) {
+			const errorSimple = err.message || '';
+			const errorsArray = err.errors || [];
+			const errorSpecific = errorsArray[0] || {};
+
+			if (errorSpecific.message === 'Validation isUrl failed') { return res.status(500).json('Not a valid URL'); }
+
+			console.log('Error Updating user');
 			console.log(err);
-			res.status(500).json(err);
+			return res.status(500).json(JSON.stringify(err));
 		});
 	});
 
 	/* PUT an update to one link */
 	app.put('/link/:id', function(req, res, next) {
-		const userID = req.user ? req.user.id : undefined;
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
 
-		Link.findOne({
-			where: {id: req.params.id}
-		})
-		.then(function(link) {
-			if (link.UserID !== userID) { throw new Error('Unauthorized'); }
+		Promise.all([
+			User.findOne({ where: query }),
+			Link.findOne({ where: {id: req.params.id} }),
+		])			
+		.then(function(allTasks) {
+			const user = allTasks[0];
+			const link = allTasks[1];
+			if (link.UserId !== user.id) { throw new Error('Unauthorized'); }
+
 			return Link.update(req.body, {
 				where: {id: req.params.id}
 			});
 		})
-		.then(function() {
+		.then(function(updatedCount) {
+			if (!updatedCount[0]) { throw new Error('Invalid API Token or cookie'); }
 			res.status(201).json({'success': true});
 		})
 		.catch(function(err) {
@@ -350,13 +442,20 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* Delete a Link */
 	app.delete('/link/:id', function(req, res, next) {
-		const userID = req.user ? req.user.id : undefined;
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
 
-		Link.findOne({
-			where: {id: req.params.id}
-		})
-		.then(function(link) {
-			if (link.UserID !== userID) { throw new Error('Unauthorized'); }
+		Promise.all([
+			User.findOne({ where: query }),
+			Link.findOne({ where: {id: req.params.id} }),
+		])			
+		.then(function(allTasks) {
+			const user = allTasks[0];
+			const link = allTasks[1];
+			if (link.UserId !== user.id) { throw new Error('Unauthorized'); }
+
 			return Link.destroy({
 				where: {id: req.params.id}
 			});
@@ -372,9 +471,12 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* POST a new Follow */
 	app.post('/follow', function(req, res, next) {
-		const user = req.user || {};
-		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
-		const follower = user.id;
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+
+		const follower = req.body.follower;
 		const followee = req.body.followee;
 
 		// Do not create a Follow is follower and followee are equal
@@ -382,7 +484,13 @@ osprey.loadFile(path).then(function (middleware) {
 			return res.status(500).json('Follower cannot be followee');
 		}
 
-		Follow.findOne({where: {follower: follower, followee: followee}})
+		User.findOne({
+			where: query
+		})
+		.then(function(user) {
+			if (!user || user.id !== follower) {return res.status(400).json('Unauthorized')}
+			return Follow.findOne({where: {follower: follower, followee: followee}});
+		})
 		.then(function(existingFollow) {
 			if (existingFollow) { throw new Error('Follow already exists'); }
 			return Follow.create({
@@ -414,13 +522,24 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* PUT an update to one Follow */
 	app.put('/follow', function(req, res, next) {
-		const user = req.user || {};
-		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
-		const follower = user.id;
-		Follow.update(req.body, {
-			where: {follower: follower, followee: req.body.followee}
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+		const follower = req.body.follower;
+		const followee = req.body.followee;
+
+		User.findOne({
+			where: query
 		})
-		.then(function() {
+		.then(function(user) {
+			if (!user || user.id !== follower) {return res.status(400).json('Unauthorized')}
+			return Follow.update(req.body, {
+				where: {follower: follower, followee: followee}
+			});
+		})
+		.then(function(updatedCount) {
+			if (!updatedCount[0]) { throw new Error('Invalid API Token or cookie'); }
 			res.status(201).json({'success': true});
 		})
 		.catch(function(err) {
@@ -431,11 +550,26 @@ osprey.loadFile(path).then(function (middleware) {
 
 	/* DELETE an update to one Follow */
 	app.delete('/follow', function(req, res, next) {
-		const user = req.user || {};
+		// const user = req.user || {};
 		// const follower = user.id || req.body.follower; // Use this one once we have apiTokens authenticating
-		const follower = user.id;
-		Follow.destroy({
-			where: {follower: follower, followee: req.body.followee}
+		// const follower = user.id;
+
+		const userID = req.user ? req.user.id : undefined; // Get userData from cookie, or
+		const apiToken = req.body.apiToken; // Get userData from apiToken
+		if (!userID && !apiToken) {return res.status(400).json('Unauthorized')}
+		const query = apiToken ? { apiToken: apiToken } : { id: userID };
+
+		const follower = req.body.follower;
+		const followee = req.body.followee;
+
+		User.findOne({
+			where: query
+		})
+		.then(function(user) {
+			if (!user || user.id !== follower) {return res.status(400).json('Unauthorized')}
+			return Follow.destroy({
+				where: {follower: follower, followee: req.body.followee}
+			});
 		})
 		.then(function() {
 			res.status(201).json({'success': true});

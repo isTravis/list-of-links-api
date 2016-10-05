@@ -5,18 +5,24 @@ documentation:
     content: |
       This API provides full access to the List of Links database.
       All requests and responses are in the form of application/json.
+      Requests should be made to the following URL paths added to the hostname
+      https://api.listoflinks.co. For example https://api.listoflinks.co/search/kate.
+  - title: Authentication
+    content: |
+      Access to secured URLs is granted by included an apiToken in the body of POST, PUT, and DELETE requests or an apiToken in the query of GET requests. The apiToken can be found on the settings page of each users profile (https://wwww.listoflinks.co/settings). 
+  - title: Contributing
+    content: |
+      This API documentation and the associated server code is all open source: https://github.com/isTravis/list-of-links-api. Contributions, fixes, bug reports are welcome!
 
 version: v1
 protocols: [ HTTPS ]
 baseUri: https://api.listoflinks.co
 mediaType: application/json
 /user:
-  description: |
-    Routes to access data about ListOfLinks Users
   displayName: User
+  description: Routes to access data about ListOfLinks Users
   post:
-    description: |
-      Create a new User
+    description: Create a new User
     body:
       application/json:
         formParameters:
@@ -35,6 +41,62 @@ mediaType: application/json
           password: 
             description: a hash of the users typed password
             required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                success: true
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "User not found"
+              }
+  put:
+    description: Update the user with the given id
+    body:
+      application/json:
+        formParameters:
+          username:
+            description: new username to update
+          name:
+            description: new name to update
+          image:
+            description: new image to update
+          email:
+            description: new email to update
+          apiToken: 
+              description: token used to authenticate the request.
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                id: "2",
+                username: "janedoe",
+                name: "Jane Doe",
+                image: "https://assets.pubpub.org/picture.jpg",
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "User not found"
+              }
+  delete:
+    description: |
+      Delete the user with the given id
+    body:
+      application/json:
+        formParameters:
+          apiToken: 
+              description: token used to authenticate the request.
     responses:
       200:
         body:
@@ -122,55 +184,52 @@ mediaType: application/json
                 {
                   error : "User not found"
                 }
-    put:
-      description: |
-        Update the user with the given id
-      body:
-        application/json:
-          formParameters:
-            username:
-              description: new username to update
-            name:
-              description: new name to update
-            image:
-              description: new image to update
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  id: "2",
-                  username: "janedoe",
-                  name: "Jane Doe",
-                  image: "https://assets.pubpub.org/picture.jpg",
-                }
-        404:
-          body:
-            application/json:
-              example: |
-                {
-                  error : "User not found"
-                }
-    delete:
-      description: |
-        Delete the user with the given id
-      responses:
-        200:
-          body:
-            application/json:
-              example: |
-                {
-                  success: true
-                }
-        404:
-          body:
-            application/json:
-              example: |
-                {
-                  error : "User not found"
-                }
+/token:
+  description: |
+    Routes to manipulate the users apiToken
+  displayName: Token
+  put:
+    description: |
+      Generate and return a new token
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                apiToken: H128DJ1hdukr
+              }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "User not found"
+              }
+/password:
+  description: |
+    Routes to manipulate the users password
+  displayName: Password
+  put:
+    description: |
+      Validate and save a new password
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              { success: true }
+      404:
+        body:
+          application/json:
+            example: |
+              {
+                error : "User not found"
+              }
 /search/{string}:
+  description: |
+    Routes to search for users
+  displayName: Search
   get:
     description: |
       Search for users by name and username
@@ -193,9 +252,10 @@ mediaType: application/json
                 error : "Error"
               }  
 /recent:
+  displayName: Recent
+  description: Routes to get lists of recently active users
   get:
-    description: |
-      List of users who have recently posted links
+    description: List of users who have recently posted links
     responses:
       200:
         body:
@@ -233,6 +293,8 @@ mediaType: application/json
           url:
             description: url of the new Link to be created
             required: true
+          apiToken: 
+            description: token used to authenticate the request.
     responses:
       200:
         body:
@@ -260,6 +322,8 @@ mediaType: application/json
               description: updated descritpion of Link to be updated
             url:
               description: updated url of the Link to be updated
+            apiToken: 
+              description: token used to authenticate the request.
       responses:
         200:
           body:
@@ -278,6 +342,11 @@ mediaType: application/json
     delete:
       description: |
         Delete a Link
+      body:
+        application/json:
+          formParameters:
+            apiToken: 
+              description: token used to authenticate the request.
       responses:
         200:
           body:
@@ -305,9 +374,12 @@ mediaType: application/json
         formParameters:
           follower:
             description: id of the follower. Can be passed in through session data.
+            required: true
           followee:
             description: id of the User who is being followed
             required: true
+          apiToken: 
+              description: token used to authenticate the request.
     responses:
       200:
         body:
@@ -358,6 +430,8 @@ mediaType: application/json
             lastRead:
               description: date the follower last viewed the profile of the followee
               type: date
+            apiToken: 
+              description: token used to authenticate the request.
       responses:
         200:
           body:
@@ -385,6 +459,8 @@ mediaType: application/json
             followee:
               description: id of the followee
               type: integer
+            apiToken: 
+              description: token used to authenticate the request.
       responses:
         200:
           body:
@@ -539,7 +615,7 @@ mediaType: application/json
 /logout:
   description: |
     Route to logout a user
-  displayName: Login
+  displayName: Logout
   get:
     description: |
       Logout a user.

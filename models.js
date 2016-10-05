@@ -63,11 +63,6 @@ var Follow = sequelize.define('Follow', {
     lastRead: Sequelize.DATE()
 })
 
-// Link.belongsTo(User, {
-//   as: 'links',
-//   onDelete: "CASCADE",
-//   foreignKey: { allowNull: false }
-// });
 User.hasMany(Link, {as: 'links', onDelete: "CASCADE", foreignKey: { allowNull: false } });
 User.belongsToMany(User, { onDelete: "CASCADE", as: 'following', through: 'Follow', foreignKey: 'follower' })
 User.belongsToMany(User, { onDelete: "CASCADE", as: 'followers', through: 'Follow', foreignKey: 'followee' })
