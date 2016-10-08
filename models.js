@@ -9,7 +9,7 @@ var path      = require("path");
 var Sequelize = require("sequelize");
 var passportLocalSequelize = require('passport-local-sequelize');
 
-var sequelize = new Sequelize(process.env.POSTGRES_URI, {logging: false, dialectOptions: {ssl: true}});
+var sequelize = new Sequelize(process.env.DATABASE_URL, {logging: false, dialectOptions: {ssl: true}});
 
 // Change to true to update the model in the database.
 // NOTE: This will erase your data.

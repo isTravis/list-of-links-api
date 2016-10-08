@@ -1,3 +1,3 @@
-process.env.POSTGRES_URI = '<YOUR-URI>';
+process.env.DATABASE_URL = '<YOUR-URL>';
 process.env.AWS_ACCESS_KEY_ID = '<YOUR-ACCESS-KEY>';
 process.env.AWS_SECRET_ACCESS_KEY = '<YOUR-SECRET-ACCESS-KEY>';
